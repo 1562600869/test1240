@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空手道道场管理系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6fa;
+    color: #2c3e50;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    padding: 20px 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  header h1 { font-size: 24px; margin-bottom: 8px; }
+  header p { opacity: 0.8; font-size: 14px; }
+  nav {
+    background: white;
+    border-bottom: 1px solid #e8e8e8;
+    padding: 0 30px;
+    display: flex;
+    gap: 5px;
+  }
+  nav button {
+    background: none;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  nav button:hover { color: #333; background: #f8f9fa; }
+  nav button.active {
+    color: #16213e;
+    border-bottom-color: #c0392b;
+    font-weight: 600;
+  }
+  main { padding: 30px; max-width: 1400px; margin: 0 auto; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .card {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .card h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: #16213e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .form-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #555;
+    flex: 1;
+    min-width: 140px;
+  }
+  input, select {
+    padding: 8px 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: #16213e; }
+  .btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #16213e; color: white; }
+  .btn-primary:hover { background: #1a1a2e; }
+  .btn-danger { background: #c0392b; color: white; }
+  .btn-danger:hover { background: #a93226; }
+  .btn-secondary { background: #95a5a6; color: white; }
+  .btn-secondary:hover { background: #7f8c8d; }
+  .btn-success { background: #27ae60; color: white; }
+  .btn-success:hover { background: #229954; }
+  .btn-small { padding: 4px 10px; font-size: 12px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ebeef5;
+  }
+  th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #16213e;
+    white-space: nowrap;
+  }
+  tr:hover td { background: #fafbfc; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .belt {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+  }
+  .belt-白 { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
+  .belt-黄 { background: #f1c40f; color: #333; }
+  .belt-橙 { background: #e67e22; }
+  .belt-绿 { background: #27ae60; }
+  .belt-蓝 { background: #2980b9; }
+  .belt-紫 { background: #8e44ad; }
+  .belt-棕 { background: #8b4513; }
+  .belt-黑 { background: #1a1a1a; }
+  .status-在籍 { background: #d5f5e3; color: #1e8449; }
+  .status-停课 { background: #fef9e7; color: #b7950b; }
+  .status-退出 { background: #fadbd8; color: #922b21; }
+  .result-通过 { background: #d5f5e3; color: #1e8449; }
+  .result-未通过 { background: #fadbd8; color: #922b21; }
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-size: 14px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .stat-item {
+    text-align: center;
+    padding: 16px;
+    border-radius: 8px;
+    background: #f8f9fa;
+  }
+  .stat-item .belt-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .stat-item .count {
+    font-size: 24px;
+    font-weight: 700;
+    color: #16213e;
+  }
+  .stat-bar {
+    height: 8px;
+    background: #e8e8e8;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .alert {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .alert-error { background: #fadbd8; color: #922b21; border: 1px solid #f5b7b1; }
+  .alert-success { background: #d5f5e3; color: #1e8449; border: 1px solid #a9dfbf; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .toolbar label { font-size: 13px; color: #555; display: flex; align-items: center; gap: 6px; }
+  .toolbar select, .toolbar input { padding: 6px 10px; font-size: 13px; }
+  .toolbar .spacer { flex: 1; }
+  .attendance-summary {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+  .attendance-summary .item { flex: 1; text-align: center; }
+  .attendance-summary .label { font-size: 13px; color: #666; margin-bottom: 4px; }
+  .attendance-summary .num { font-size: 22px; font-weight: 700; color: #16213e; }
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  }
+  .modal h3 { margin-bottom: 16px; color: #16213e; }
+  .modal .form-row { margin-bottom: 12px; }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🥋 空手道道场管理系统</h1>
+  <p>学员管理 · 训练出勤 · 段带考核</p>
+</header>
+
+<nav id="nav">
+  <button data-tab="students" class="active">学员管理</button>
+  <button data-tab="attendance">训练出勤</button>
+  <button data-tab="exams">段带考核</button>
+  <button data-tab="stats">统计查询</button>
+</nav>
+
+<main>
+
+<div id="msg"></div>
+
+<div id="tab-students" class="tab-panel active">
+  <div class="card">
+    <h2>➕ 添加学员</h2>
+    <div class="form-row" id="addStudentForm">
+      <label>昵称<input type="text" id="s_nickname" placeholder="学员昵称"></label>
+      <label>手机<input type="text" id="s_phone" placeholder="联系电话"></label>
+      <label>年龄组
+        <select id="s_age"><option value="">请选择</option></select>
+      </label>
+      <label>当前腰带
+        <select id="s_belt"><option value="">请选择</option></select>
+      </label>
+      <label>状态
+        <select id="s_status"><option value="">请选择</option></select>
+      </label>
+      <label style="justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="addStudent()">添加学员</button>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 学员列表</h2>
+    <div class="toolbar">
+      <label>状态筛选：
+        <select id="filterStatus" onchange="loadStudents()">
+          <option value="">全部</option>
+        </select>
+      </label>
+      <div class="spacer"></div>
+      <span id="studentCount" style="color:#888;font-size:13px;"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>昵称</th><th>手机</th><th>年龄组</th><th>当前腰带</th><th>状态</th><th>注册时间</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="studentsTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="tab-attendance" class="tab-panel">
+  <div class="card">
+    <h2>✅ 签到登记</h2>
+    <div class="form-row">
+      <label>日期<input type="date" id="a_date"></label>
+      <label>学员
+        <select id="a_student"><option value="">请选择学员</option></select>
+      </label>
+      <label>课程类型
+        <select id="a_classtype"><option value="">请选择</option></select>
+      </label>
+      <label style="justify-content:flex-end;">
+        <button class="btn btn-success" onclick="addAttendance()">签到</button>
+      </label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📅 出勤记录</h2>
+    <div class="toolbar">
+      <label>日期从：<input type="date" id="filterDateFrom" onchange="loadAttendances()"></label>
+      <label>到：<input type="date" id="filterDateTo" onchange="loadAttendances()"></label>
+      <label>学员：
+        <select id="filterStudent" onchange="loadAttendances()">
+          <option value="">全部</option>
+        </select>
+      </label>
+      <button class="btn btn-secondary btn-small" onclick="resetAttFilter()">重置</button>
+      <div class="spacer"></div>
+      <span id="attCount" style="color:#888;font-size:13px;"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>日期</th><th>学员</th><th>腰带</th><th>课程类型</th><th>签到时间</th>
+        </tr>
+      </thead>
+      <tbody id="attTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="tab-exams" class="tab-panel">
+  <div class="card">
+    <h2>🎯 段带考核登记</h2>
+    <div class="form-row">
+      <label>考核日期<input type="date" id="e_date"></label>
+      <label>学员
+        <select id="e_student" onchange="updateNextBelt()">
+          <option value="">请选择学员</option>
+        </select>
+      </label>
+      <label>目标腰带（下一级）
+        <select id="e_belt"><option value="">请选择</option></select>
+      </label>
+      <label>考核结果
+        <select id="e_result"><option value="">请选择</option></select>
+      </label>
+      <label style="justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="addExam()">提交考核</button>
+      </label>
+    </div>
+    <p style="color:#888;font-size:12px;margin-top:8px;">* 目标腰带必须为学员当前腰带的下一级。通过后学员当前腰带将自动更新。</p>
+  </div>
+
+  <div class="card">
+    <h2>📜 考核记录</h2>
+    <div class="toolbar">
+      <label>学员：
+        <select id="filterExamStudent" onchange="loadExams()">
+          <option value="">全部</option>
+        </select>
+      </label>
+      <div class="spacer"></div>
+      <span id="examCount" style="color:#888;font-size:13px;"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>考核日期</th><th>学员</th><th>目标腰带</th><th>结果</th><th>当前腰带</th><th>登记时间</th>
+        </tr>
+      </thead>
+      <tbody id="examTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="tab-stats" class="tab-panel">
+  <div class="card">
+    <h2>👤 学员本月出勤统计</h2>
+    <div class="toolbar">
+      <label>学员：
+        <select id="statStudent">
+          <option value="">请选择学员</option>
+        </select>
+      </label>
+      <label>月份：<input type="month" id="statMonth"></label>
+      <button class="btn btn-primary btn-small" onclick="loadMonthlyAttendance()">查询</button>
+    </div>
+    <div id="monthlyAttendanceResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 在籍学员腰带等级分布</h2>
+    <div class="toolbar">
+      <label>月份：<input type="month" id="statBeltMonth"></label>
+      <button class="btn btn-primary btn-small" onclick="loadBeltDistribution()">查询</button>
+    </div>
+    <div id="beltDistResult"></div>
+  </div>
+</div>
+
+</main>
+
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <h3>✏️ 编辑学员</h3>
+    <div class="form-row">
+      <label>昵称<input type="text" id="es_nickname"></label>
+      <label>手机<input type="text" id="es_phone"></label>
+    </div>
+    <div class="form-row">
+      <label>年龄组<select id="es_age"></select></label>
+      <label>当前腰带<select id="es_belt"></select></label>
+      <label>状态<select id="es_status"></select></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let META = null;
+let editingId = null;
+const BELT_ORDER = ['白', '黄', '橙', '绿', '蓝', '紫', '棕', '黑'];
+const BELT_COLORS = {
+  '白': '#f0f0f0', '黄': '#f1c40f', '橙': '#e67e22', '绿': '#27ae60',
+  '蓝': '#2980b9', '紫': '#8e44ad', '棕': '#8b4513', '黑': '#1a1a1a'
+};
+
+function nextBelt(cur) {
+  const idx = BELT_ORDER.indexOf(cur);
+  return idx >= 0 && idx < BELT_ORDER.length - 1 ? BELT_ORDER[idx + 1] : null;
+}
+
+function showMsg(text, type='error') {
+  const el = document.getElementById('msg');
+  el.innerHTML = `<div class="alert alert-${type}">${text}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 3000);
+}
+
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {} };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(path, opts);
+  return await res.json();
+}
+
+function beltBadge(b) {
+  const color = BELT_COLORS[b] || '#999';
+  const textColor = (b === '白' || b === '黄') ? '#333' : 'white';
+  return `<span class="belt belt-${b}">${b}带</span>`;
+}
+function statusBadge(s) { return `<span class="badge status-${s}">${s}</span>`; }
+function resultBadge(r) { return `<span class="badge result-${r}">${r}</span>`; }
+function classBadge(c) { return `<span class="badge" style="background:#ebf5fb;color:#2471a3;">${c}</span>`; }
+
+function fillSelect(sel, options, includeEmpty=true, emptyText='请选择') {
+  sel.innerHTML = includeEmpty ? `<option value="">${emptyText}</option>` : '';
+  options.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o;
+    opt.textContent = o;
+    sel.appendChild(opt);
+  });
+}
+
+async function init() {
+  const r = await api('/api/meta');
+  META = r.data;
+
+  document.getElementById('a_date').value = META.today;
+  document.getElementById('e_date').value = META.today;
+  document.getElementById('statMonth').value = META.this_month;
+  document.getElementById('statBeltMonth').value = META.this_month;
+
+  fillSelect(document.getElementById('s_age'), META.age_groups);
+  fillSelect(document.getElementById('s_belt'), META.belt_order);
+  fillSelect(document.getElementById('s_status'), META.student_status);
+  fillSelect(document.getElementById('filterStatus'), META.student_status);
+  fillSelect(document.getElementById('a_classtype'), META.class_types);
+  fillSelect(document.getElementById('e_result'), META.exam_results);
+  fillSelect(document.getElementById('es_age'), META.age_groups, false);
+  fillSelect(document.getElementById('es_belt'), META.belt_order, false);
+  fillSelect(document.getElementById('es_status'), META.student_status, false);
+
+  document.querySelectorAll('#nav button').forEach(btn => {
+    btn.onclick = () => switchTab(btn.dataset.tab);
+  });
+
+  await loadStudents();
+  await loadStudentSelects();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if (name === 'attendance') loadAttendances();
+  if (name === 'exams') loadExams();
+  if (name === 'stats') { loadBeltDistribution(); }
+}
+
+async function loadStudentSelects() {
+  const r = await api('/api/students');
+  const students = r.data || [];
+  const sels = ['a_student', 'filterStudent', 'e_student', 'filterExamStudent', 'statStudent'];
+  sels.forEach(id => {
+    const sel = document.getElementById(id);
+    const keep = sel.value;
+    const isFilter = id === 'filterStudent' || id === 'filterExamStudent';
+    sel.innerHTML = isFilter ? '<option value="">全部</option>' : '<option value="">请选择学员</option>';
+    students.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.nickname} (${s.current_belt}带)`;
+      sel.appendChild(opt);
+    });
+    if (keep && students.some(s => s.id == keep)) sel.value = keep;
+  });
+}
+
+async function loadStudents() {
+  const status = document.getElementById('filterStatus').value;
+  const url = '/api/students' + (status ? `?status=${encodeURIComponent(status)}` : '');
+  const r = await api(url);
+  const list = r.data || [];
+  const tb = document.getElementById('studentsTbody');
+  document.getElementById('studentCount').textContent = `共 ${list.length} 人`;
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="empty">暂无学员数据</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(s => `
+    <tr>
+      <td>${s.id}</td>
+      <td><b>${s.nickname}</b></td>
+      <td>${s.phone}</td>
+      <td>${s.age_group}</td>
+      <td>${beltBadge(s.current_belt)}</td>
+      <td>${statusBadge(s.status)}</td>
+      <td style="font-size:12px;color:#888;">${s.created_at}</td>
+      <td>
+        <button class="btn btn-secondary btn-small" onclick='editStudent(${JSON.stringify(s)})'>编辑</button>
+        <button class="btn btn-danger btn-small" onclick="deleteStudent(${s.id}, '${s.nickname}')">删除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function addStudent() {
+  const nickname = document.getElementById('s_nickname').value.trim();
+  const phone = document.getElementById('s_phone').value.trim();
+  const age_group = document.getElementById('s_age').value;
+  const current_belt = document.getElementById('s_belt').value || '白';
+  const status = document.getElementById('s_status').value || '在籍';
+  if (!nickname) { showMsg('请填写昵称'); return; }
+  if (!phone) { showMsg('请填写手机号'); return; }
+  if (!age_group) { showMsg('请选择年龄组'); return; }
+  const r = await api('/api/students', 'POST', { nickname, phone, age_group, current_belt, status });
+  if (r.success) {
+    showMsg('学员添加成功！', 'success');
+    ['s_nickname', 's_phone'].forEach(id => document.getElementById(id).value = '');
+    ['s_age', 's_belt', 's_status'].forEach(id => document.getElementById(id).value = '');
+    await loadStudents();
+    await loadStudentSelects();
+  } else {
+    showMsg(r.error || '添加失败');
+  }
+}
+
+function editStudent(s) {
+  editingId = s.id;
+  document.getElementById('es_nickname').value = s.nickname;
+  document.getElementById('es_phone').value = s.phone;
+  document.getElementById('es_age').value = s.age_group;
+  document.getElementById('es_belt').value = s.current_belt;
+  document.getElementById('es_status').value = s.status;
+  document.getElementById('editModal').classList.add('active');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+  editingId = null;
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const body = {
+    nickname: document.getElementById('es_nickname').value.trim(),
+    phone: document.getElementById('es_phone').value.trim(),
+    age_group: document.getElementById('es_age').value,
+    current_belt: document.getElementById('es_belt').value,
+    status: document.getElementById('es_status').value
+  };
+  const r = await api(`/api/students/${editingId}`, 'PUT', body);
+  if (r.success) {
+    showMsg('学员信息更新成功！', 'success');
+    closeEditModal();
+    await loadStudents();
+    await loadStudentSelects();
+  } else {
+    showMsg(r.error || '更新失败');
+  }
+}
+
+async function deleteStudent(id, name) {
+  if (!confirm(`确定删除学员"${name}"？相关出勤和考核记录也将被删除。`)) return;
+  const r = await api(`/api/students/${id}/delete`, 'POST', {});
+  if (r.success) {
+    showMsg('已删除学员', 'success');
+    await loadStudents();
+    await loadStudentSelects();
+  } else {
+    showMsg(r.error || '删除失败');
+  }
+}
+
+async function loadAttendances() {
+  const from = document.getElementById('filterDateFrom').value;
+  const to = document.getElementById('filterDateTo').value;
+  const sid = document.getElementById('filterStudent').value;
+  const params = new URLSearchParams();
+  if (from) params.set('date_from', from);
+  if (to) params.set('date_to', to);
+  if (sid) params.set('student_id', sid);
+  const url = '/api/attendances' + (params.toString() ? `?${params}` : '');
+  const r = await api(url);
+  const list = r.data || [];
+  document.getElementById('attCount').textContent = `共 ${list.length} 条记录`;
+  const tb = document.getElementById('attTbody');
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="empty">暂无出勤记录</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(a => `
+    <tr>
+      <td>${a.date}</td>
+      <td><b>${a.nickname}</b></td>
+      <td>${beltBadge(a.current_belt)}</td>
+      <td>${classBadge(a.class_type)}</td>
+      <td style="font-size:12px;color:#888;">${a.created_at}</td>
+    </tr>
+  `).join('');
+}
+
+function resetAttFilter() {
+  ['filterDateFrom', 'filterDateTo', 'filterStudent'].forEach(id => document.getElementById(id).value = '');
+  loadAttendances();
+}
+
+async function addAttendance() {
+  const date = document.getElementById('a_date').value;
+  const student_id = document.getElementById('a_student').value;
+  const class_type = document.getElementById('a_classtype').value;
+  if (!date) { showMsg('请选择日期'); return; }
+  if (!student_id) { showMsg('请选择学员'); return; }
+  if (!class_type) { showMsg('请选择课程类型'); return; }
+  const r = await api('/api/attendances', 'POST', { date, student_id, class_type });
+  if (r.success) {
+    showMsg('签到成功！', 'success');
+    loadAttendances();
+  } else {
+    showMsg(r.error || '签到失败');
+  }
+}
+
+function updateNextBelt() {
+  const sel = document.getElementById('e_student');
+  const beltSel = document.getElementById('e_belt');
+  const text = sel.options[sel.selectedIndex]?.textContent || '';
+  const match = text.match(/\((.+)带\)/);
+  const cur = match ? match[1] : null;
+  if (!cur) { beltSel.innerHTML = '<option value="">请选择</option>'; return; }
+  const nxt = nextBelt(cur);
+  beltSel.innerHTML = '';
+  if (nxt) {
+    const opt = document.createElement('option');
+    opt.value = nxt;
+    opt.textContent = `${nxt}带（从${cur}带晋级）`;
+    opt.selected = true;
+    beltSel.appendChild(opt);
+  } else {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '已是最高段位（黑带）';
+    beltSel.appendChild(opt);
+  }
+}
+
+async function loadExams() {
+  const sid = document.getElementById('filterExamStudent').value;
+  const url = '/api/exams' + (sid ? `?student_id=${sid}` : '');
+  const r = await api(url);
+  const list = r.data || [];
+  document.getElementById('examCount').textContent = `共 ${list.length} 条记录`;
+  const tb = document.getElementById('examTbody');
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">暂无考核记录</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(e => `
+    <tr>
+      <td>${e.exam_date}</td>
+      <td><b>${e.nickname}</b></td>
+      <td>${beltBadge(e.target_belt)}</td>
+      <td>${resultBadge(e.result)}</td>
+      <td>${beltBadge(e.current_belt_now)}</td>
+      <td style="font-size:12px;color:#888;">${e.created_at}</td>
+    </tr>
+  `).join('');
+}
+
+async function addExam() {
+  const exam_date = document.getElementById('e_date').value;
+  const student_id = document.getElementById('e_student').value;
+  const target_belt = document.getElementById('e_belt').value;
+  const result = document.getElementById('e_result').value;
+  if (!exam_date) { showMsg('请选择考核日期'); return; }
+  if (!student_id) { showMsg('请选择学员'); return; }
+  if (!target_belt) { showMsg('目标腰带无效'); return; }
+  if (!result) { showMsg('请选择考核结果'); return; }
+  const r = await api('/api/exams', 'POST', { student_id, exam_date, target_belt, result });
+  if (r.success) {
+    showMsg(result === '通过' ? '考核通过！学员腰带已自动更新' : '考核记录已保存', 'success');
+    document.getElementById('e_student').value = '';
+    document.getElementById('e_belt').innerHTML = '<option value="">请选择</option>';
+    document.getElementById('e_result').value = '';
+    await loadExams();
+    await loadStudents();
+    await loadStudentSelects();
+  } else {
+    showMsg(r.error || '提交失败');
+  }
+}
+
+async function loadMonthlyAttendance() {
+  const sid = document.getElementById('statStudent').value;
+  const ym = document.getElementById('statMonth').value;
+  const el = document.getElementById('monthlyAttendanceResult');
+  if (!sid) { el.innerHTML = '<p class="empty">请先选择学员</p>'; return; }
+  if (!ym) { el.innerHTML = '<p class="empty">请先选择月份</p>'; return; }
+  const r = await api(`/api/stats/monthly_attendance?student_id=${sid}&year_month=${ym}`);
+  if (!r.success || !r.data) {
+    el.innerHTML = `<div class="alert alert-error">${r.error || '查询失败'}</div>`;
+    return;
+  }
+  const d = r.data;
+  const sel = document.getElementById('statStudent');
+  const name = sel.options[sel.selectedIndex]?.textContent?.split(' ')[0] || '';
+  el.innerHTML = `
+    <h3 style="margin-bottom:12px;font-size:15px;">${name} · ${ym} 出勤情况</h3>
+    <div class="attendance-summary">
+      ${META.class_types.map(ct => `
+        <div class="item">
+          <div class="label">${ct}</div>
+          <div class="num">${d[ct] || 0}</div>
+          <div class="label">次</div>
+        </div>
+      `).join('')}
+      <div class="item" style="border-left:2px solid #e8e8e8;">
+        <div class="label"><b>总计</b></div>
+        <div class="num" style="color:#c0392b;">${d.total || 0}</div>
+        <div class="label">次</div>
+      </div>
+    </div>
+  `;
+}
+
+async function loadBeltDistribution() {
+  const ym = document.getElementById('statBeltMonth').value;
+  const el = document.getElementById('beltDistResult');
+  const r = await api('/api/stats/belt_distribution' + (ym ? `?year_month=${ym}` : ''));
+  if (!r.success || !r.data) {
+    el.innerHTML = `<div class="alert alert-error">${r.error || '查询失败'}</div>`;
+    return;
+  }
+  const d = r.data;
+  const total = d.total || 1;
+  el.innerHTML = `
+    <div style="margin-bottom:12px;font-size:15px;color:#16213e;">
+      在籍学员共 <b style="font-size:20px;color:#c0392b;">${d.total || 0}</b> 人
+    </div>
+    <div class="stats-grid">
+      ${META.belt_order.map(b => {
+        const c = d[b] || 0;
+        const pct = (c / total * 100).toFixed(0);
+        return `
+          <div class="stat-item">
+            <span class="belt-label">${beltBadge(b)}</span>
+            <div class="count">${c}</div>
+            <div style="font-size:12px;color:#888;">${pct}%</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" style="width:${pct}%;background:${BELT_COLORS[b]};"></div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
