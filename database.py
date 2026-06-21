@@ -39,7 +39,7 @@ def init_db():
                 class_type TEXT NOT NULL CHECK(class_type IN ('基础课','晋级课','自由课')),
                 created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
                 FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-                UNIQUE(date, student_id, class_type)
+                UNIQUE(student_id, date, class_type)
             );
 
             CREATE TABLE IF NOT EXISTS exams (
